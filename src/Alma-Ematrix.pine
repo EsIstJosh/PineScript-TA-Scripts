@@ -1,0 +1,435 @@
+//@version=4
+study("ALMA-Ematrix", overlay=false)
+tf=input('1D',type=input.resolution )
+len = input(8, minval=1)
+src = input(close, title="Source")
+lsrc = log(src)
+geometric = input(type=input.bool,defval=false)
+linewidth = input(3,minval=1)
+period = input(34, minval=1, title="Period")
+simulate = input(false, title="Simulative Volume")
+
+offset = input(title="Offset", type=input.integer, defval=0, minval=-500, maxval=500)
+vol = if simulate
+    abs(close - close[1])
+          + abs(high - max(open, close)) * 2 
+          + abs(min(open, close) - low) * 2
+else
+    volume
+
+out1 = ema(src * vol, period) / ema(vol, period)
+
+
+corrvol = nz(volume) + 1  // Makes it properly handle charts where volume is only available for part of its history.
+volume_wma(series,length) => wma(series*corrvol,length)/wma(corrvol,length)
+volume_hma(series,length) => wma(2*volume_wma(series, length/2)-volume_wma(series, length), round(sqrt(length)))
+oscillator_coloring(series) => series > 0 ? color.green : color.red
+
+volume_hullma =  volume_hma(geometric ? lsrc : src,len)
+out2 = geometric ? exp(volume_hullma) : volume_hullma
+
+mavg1=sma(out1,4)
+mavg2=sma(out2,4)
+sqav1=sqrt(pow(mavg1 + mavg2,2))
+sq1=pow(sqav1,1)/2
+//plot(sq1)
+//plot(out1,color=oscillator_coloring(change(out1)),linewidth=linewidth,title="Vol. Weighted Hull MA")
+//plot(out2, title="VWEMA", color=color.blue, linewidth=2, offset=offset)
+
+
+A1Length = input(16, title="ALMA 1 Length")
+A2Length = input(32, title="ALMA 2 Length")
+A3Length = input(64, title="ALMA 3 Length")
+A4Length = input(80, title="ALMA 4 Length")
+A5Length = input(128, title="ALMA 5 Length")
+A6Length = input(160, title="ALMA 11 Length")
+A7Length = input(200, title="ALMA 22 Length")
+A8Length = input(256, title="ALMA 33 Length")
+A9Length = input(300, title="ALMA 44 Length")
+A10Length = input(360, title="ALMA 55 Length")
+A11Length = input(420, title="ALMA 66 Length")
+
+
+Offset = input(.66, title="ALMA Offset")
+Sigma = input(6, title="ALMA Sigma")
+
+src1 = input(title="Source1", type=input.source, defval=close)
+
+
+transplev=input(title="Transparency", type=input.integer,
+     defval=30, minval=0, maxval=100)
+transplev2=input(title="Transparency 2", type=input.integer,
+     defval=75, minval=0, maxval=100)
+transplev3=input(title="Transparency 3", type=input.integer,
+     defval=10, minval=0, maxval=100)
+//ALMA1 = plot(alma(src1,A1Length,Offset,Sigma), transp=(transplev3), color=aqua, linewidth=2, title="ALMA 1")
+//ALMA1_2inc1 = plot(alma(src2,A1Length + ((A2Length - A1Length) / 5),Offset,Sigma), transp=(transplev), color=#00ffe4, linewidth=1, title="ALMA 1 inc 1")
+//ALMA1_2inc2 = plot(alma(src3,A1Length + (((A2Length - A1Length) / 5)*2),Offset,Sigma), transp=(transplev), clor=#00ffb7, linewidth=1, title="ALMA 1 inc 2")
+//ALMA1_2inc3 = plot(alma(src4,A1Length + (((A2Length - A1Length) / 5)*3),Offset,Sigma), transp=(transplev), clor=#00ffb7, linewidth=1, title="ALMA 1 inc 3")
+//ALMA1_2inc4 = plot(alma(src5,A1Length + (((A2Length - A1Length) / 5)*4),Offset,Sigma), transp=(transplev), clor=#00ff79, linewidth=1, title="ALMA 1 inc 4")
+
+curve1   = alma(sq1,A1Length                              ,Offset,Sigma)
+curve1a  = alma(sq1,A1Length + (A2Length - A1Length) / 5  ,Offset,Sigma)   
+curve1b  = alma(sq1,A1Length + (A2Length - A1Length) / 5*2,Offset,Sigma)
+curve1c  = alma(sq1,A1Length + (A2Length - A1Length) / 5*3,Offset,Sigma)
+curve1d  = alma(sq1,A1Length + (A2Length - A1Length) / 5*4,Offset,Sigma)
+curve1e  = alma(sq1,A1Length + (A2Length - A1Length) / 5*5,Offset,Sigma)
+curve1f  = alma(sq1,A1Length + (A2Length - A1Length) / 5*6,Offset,Sigma)
+curve2   = alma(sq1,A2Length                              ,Offset,Sigma)
+curve2a  = alma(sq1,A2Length + (A3Length - A2Length) / 5  ,Offset,Sigma) 
+curve2b  = alma(sq1,A2Length + (A3Length - A2Length) / 5*2,Offset,Sigma)
+curve2c  = alma(sq1,A2Length + (A3Length - A2Length) / 5*3,Offset,Sigma)
+curve2d  = alma(sq1,A2Length + (A3Length - A2Length) / 5*4,Offset,Sigma)
+curve2e  = alma(sq1,A2Length + (A3Length - A2Length) / 5*5,Offset,Sigma)
+curve2f  = alma(sq1,A2Length + (A3Length - A2Length) / 5*6,Offset,Sigma)
+curve3   = alma(sq1,A3Length                              ,Offset,Sigma)
+curve3a  = alma(sq1,A3Length + (A4Length - A3Length) / 5  ,Offset,Sigma)
+curve3b  = alma(sq1,A3Length + (A4Length - A3Length) / 5*2,Offset,Sigma)
+curve3c  = alma(sq1,A3Length + (A4Length - A3Length) / 5*3,Offset,Sigma)
+curve3d  = alma(sq1,A3Length + (A4Length - A3Length) / 5*4,Offset,Sigma)
+curve3e  = alma(sq1,A3Length + (A4Length - A3Length) / 5*5,Offset,Sigma)
+curve3f  = alma(sq1,A3Length + (A4Length - A3Length) / 5*6,Offset,Sigma)
+curve4   = alma(sq1,A4Length                              ,Offset,Sigma)
+curve4a  = alma(sq1,A4Length + (A5Length - A4Length) / 5  ,Offset,Sigma)
+curve4b  = alma(sq1,A4Length + (A5Length - A4Length) / 5*2,Offset,Sigma)
+curve4c  = alma(sq1,A4Length + (A5Length - A4Length) / 5*3,Offset,Sigma)
+curve4d  = alma(sq1,A4Length + (A5Length - A4Length) / 5*4,Offset,Sigma)
+curve4e  = alma(sq1,A4Length + (A5Length - A4Length) / 5*5,Offset,Sigma)
+curve4f  = alma(sq1,A4Length + (A5Length - A4Length) / 5*6,Offset,Sigma)
+curve5   = alma(sq1,A5Length                              ,Offset,Sigma)
+curve5a  = alma(sq1,A5Length + (A6Length - A5Length) / 5  ,Offset,Sigma)  
+curve5b  = alma(sq1,A5Length + (A6Length - A5Length) / 5*2,Offset,Sigma)
+curve5c  = alma(sq1,A5Length + (A6Length - A5Length) / 5*3,Offset,Sigma)
+curve5d  = alma(sq1,A5Length + (A6Length - A5Length) / 5*4,Offset,Sigma)
+curve5e  = alma(sq1,A5Length + (A6Length - A5Length) / 5*5,Offset,Sigma)
+curve5f  = alma(sq1,A5Length + (A6Length - A5Length) / 5*6,Offset,Sigma)
+curve6   = alma(sq1,A6Length                              ,Offset,Sigma)
+curve6a  = alma(sq1,A6Length + (A7Length - A6Length) / 5  ,Offset,Sigma)
+curve6b  = alma(sq1,A6Length + (A7Length - A6Length) / 5*2,Offset,Sigma)
+curve6c  = alma(sq1,A6Length + (A7Length - A6Length) / 5*3,Offset,Sigma)
+curve6d  = alma(sq1,A6Length + (A7Length - A6Length) / 5*4,Offset,Sigma)
+curve6e  = alma(sq1,A6Length + (A7Length - A6Length) / 5*5,Offset,Sigma)
+curve6f  = alma(sq1,A6Length + (A7Length - A6Length) / 5*6,Offset,Sigma)
+curve7   = alma(sq1,A7Length                              ,Offset,Sigma)
+curve7a  = alma(sq1,A7Length + (A8Length - A7Length) / 5  ,Offset,Sigma)
+curve7b  = alma(sq1,A7Length + (A8Length - A7Length) / 5*2,Offset,Sigma)
+curve7c  = alma(sq1,A7Length + (A8Length - A7Length) / 5*3,Offset,Sigma)
+curve7d  = alma(sq1,A7Length + (A8Length - A7Length) / 5*4,Offset,Sigma)
+curve7e  = alma(sq1,A7Length + (A8Length - A7Length) / 5*5,Offset,Sigma)
+curve7f  = alma(sq1,A7Length + (A8Length - A7Length) / 5*6,Offset,Sigma)
+curve8   = alma(sq1,A8Length                              ,Offset,Sigma)
+curve8a  = alma(sq1,A8Length + (A9Length - A8Length) / 5  ,Offset,Sigma)
+curve8b  = alma(sq1,A8Length + (A9Length - A8Length) / 5*2,Offset,Sigma)
+curve8c  = alma(sq1,A8Length + (A9Length - A8Length) / 5*3,Offset,Sigma)
+curve8d  = alma(sq1,A8Length + (A9Length - A8Length) / 5*4,Offset,Sigma)
+curve8e  = alma(sq1,A8Length + (A9Length - A8Length) / 5*5,Offset,Sigma)
+curve8f  = alma(sq1,A8Length + (A9Length - A8Length) / 5*6,Offset,Sigma)
+curve9   = alma(sq1,A9Length                              ,Offset,Sigma)
+curve9a  = alma(sq1,A9Length + (A10Length - A9Length) / 5  ,Offset,Sigma)
+curve9b  = alma(sq1,A9Length + (A10Length - A9Length) / 5*2,Offset,Sigma)
+curve9c  = alma(sq1,A9Length + (A10Length - A9Length) / 5*3,Offset,Sigma)
+curve9d  = alma(sq1,A9Length + (A10Length - A9Length) / 5*4,Offset,Sigma)
+curve9e  = alma(sq1,A9Length + (A10Length - A9Length) / 5*5,Offset,Sigma)
+curve9f  = alma(sq1,A9Length + (A10Length - A9Length) / 5*6,Offset,Sigma)
+curve10  = alma(sq1,A10Length                              ,Offset,Sigma)
+curve10a = alma(sq1,A10Length + (A11Length - A10Length) / 5  ,Offset,Sigma)   
+curve10b = alma(sq1,A10Length + (A11Length - A10Length) / 5*2,Offset,Sigma)
+curve10c = alma(sq1,A10Length + (A11Length - A10Length) / 5*3,Offset,Sigma)
+curve10d = alma(sq1,A10Length + (A11Length - A10Length) / 5*4,Offset,Sigma)
+curve10e = alma(sq1,A10Length + (A11Length - A10Length) / 5*5,Offset,Sigma)
+curve10f = alma(sq1,A10Length + (A11Length - A10Length) / 5*6,Offset,Sigma)
+ma = ema(curve1,16)
+//ma2 = wma(close,50)
+avg = (curve1+curve2+curve3+curve4+curve5+curve6+curve7+curve8+curve9+curve10)/10
+
+//avga = (curve1a+curve2a+curve3a+curve4a+curve5a+curve6a+curve7a+curve8a+curve9a+curve10a)/10
+//avgb = (curve1b+curve2b+curve3b+curve4b+curve5b+curve6b+curve7b+curve8b+curve9b+curve10b)/10
+//avgc = (curve1c+curve2c+curve3c+curve4c+curve5c+curve6c+curve7c+curve8c+curve9c+curve10c)/10
+//avgd = (curve1d+curve2d+curve3d+curve4d+curve5d+curve6d+curve7d+curve8d+curve9d+curve10d)/10
+//avge = (curve1e+curve2e+curve3e+curve4e+curve5e+curve6e+curve7e+curve8e+curve9e+curve10e)/10
+//avgf = (curve1f+curve2f+curve3f+curve4f+curve5f+curve6f+curve7f+curve8f+curve9f+curve10f)/10
+//avgalt = (curve1+curve1+curve4+curve7+curve10+curve10)/6-((ma-(avg*1.1))*.66)
+//avgall = (vwma((avg+avga+avgb+avgc+avgd+avge+avgf)/7,32))+(ma2-avgalt)
+//mavgall = sma(avgall*avg*avg/(avgalt*avgf),128)
+//avava = (mavgall*avgall*avgalt+((ma+ma2)/2))/avga/(ma/1.16)
+
+//curve11  = plot(alma(src1,A1Length,                               Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11a = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5,    Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11b = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5*2,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11c = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5*3,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11d = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5*4,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11e = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5*5,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve11f = plot(alma(src1,A1Length+ (A2Length - A3Length) /-5*6,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12  = plot(alma(src1,A2Length ,                              Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12a = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5,    Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12b = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5*2,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12c = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5*3,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12d = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5*4,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12e = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5*5,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve12f = plot(alma(src1,A2Length+ (A3Length - A4Length) /-5*6,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13  = plot(alma(src1,A3Length ,                              Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13a = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5,    Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13b = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5*2,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13c = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5*3,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13d = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5*4,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13e = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5*5,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve13f = plot(alma(src1,A3Length+ (A4Length - A5Length) /-5*6,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14  = plot(alma(src1,A4Length ,                            Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14a = plot(alma(src1,A4Length+ (A5Length - A6Length) /-5,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14b = plot(alma(src1,A4Length+ (A5Length - A6Length) /-5*2,  Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14c = plot(alma(src1,A4Length+ (A5Length - A6Length) /-5*3,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14d = plot(alma(src1,A4Length+ (A5Length - A6Length) /-5*4,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+//curve14e = plot(alma(src1,A4Length+ (A5Length - A6Length) /-5*5,Offset2,Sigma2)*-1+sma(hl2*2, 32),color=gray)
+
+
+//plot(curve1, "Curve1", transp=(transplev3),color=#c30b0b, linewidth=2)
+//plot(curve1a,"Curve" , transp=(transplev), color=#c30b0b, linewidth=1)
+//plot(curve1b,"Curve" , transp=(transplev), color=#c30b0b, linewidth=1)
+//plot(curve1c,"Curve" , transp=(transplev), color=#c30b0b, linewidth=1)
+//plot(curve1d,"Curve" , transp=(transplev), color=#c30b0b, linewidth=1)
+//plot(curve1e,"Curve" , transp=(transplev), color=#c30b0b, linewidth=1)
+//
+//plot(curve2, "Curve2", transp=(transplev3),color=#a65a0d, linewidth=2)
+//plot(curve2a,"Curve" , transp=(transplev), color=#a65a0d, linewidth=1)
+//plot(curve2b,"Curve" , transp=(transplev), color=#a65a0d, linewidth=1)
+//plot(curve2c,"Curve" , transp=(transplev), color=#a65a0d, linewidth=1)
+//plot(curve2d,"Curve" , transp=(transplev), color=#a65a0d, linewidth=1)
+//plot(curve2e,"Curve" , transp=(transplev), color=#a65a0d, linewidth=1)
+//
+//plot(curve3, "Curve3", transp=(transplev3),color=#577625, linewidth=2)
+//plot(curve3a,"Curve" , transp=(transplev), color=#577625, linewidth=1)
+//plot(curve3b,"Curve" , transp=(transplev), color=#577625, linewidth=1)
+//plot(curve3c,"Curve" , transp=(transplev), color=#577625, linewidth=1)
+//plot(curve3d,"Curve" , transp=(transplev), color=#577625, linewidth=1)
+//plot(curve3e,"Curve" , transp=(transplev), color=#577625, linewidth=1)
+//
+//plot(curve4,"Curve4" , transp=(transplev3),color=#045323, linewidth=2)
+//plot(curve4a,"Curve" , transp=(transplev), color=#045323, linewidth=1)
+//plot(curve4b,"Curve" , transp=(transplev), color=#045323, linewidth=1)
+//plot(curve4c,"Curve" , transp=(transplev), color=#045323, linewidth=1)
+//plot(curve4d,"Curve" , transp=(transplev), color=#045323, linewidth=1)
+//plot(curve4e,"Curve" , transp=(transplev), color=#045323, linewidth=1)
+//
+//plot(curve5, "Curve5", transp=(transplev3),color=#093797, linewidth=2)
+//plot(curve5a,"Curve" , transp=(transplev), color=#093797, linewidth=1)
+//plot(curve5b,"Curve" , transp=(transplev), color=#093797, linewidth=1)
+//plot(curve5c,"Curve" , transp=(transplev), color=#093797, linewidth=1)
+//plot(curve5d,"Curve" , transp=(transplev), color=#093797, linewidth=1)
+//plot(curve5e,"Curve" , transp=(transplev), color=#093797, linewidth=1)
+//
+//plot(curve6, "Curve6", transp=(transplev3),color=#3203aa, linewidth=2)
+//plot(curve6a,"Curve" , transp=(transplev), color=#3203aa, linewidth=1)
+//plot(curve6b,"Curve" , transp=(transplev), color=#3203aa, linewidth=1)
+//plot(curve6c,"Curve" , transp=(transplev), color=#3203aa, linewidth=1)
+//plot(curve6d,"Curve" , transp=(transplev), color=#3203aa, linewidth=1)
+//plot(curve6e,"Curve" , transp=(transplev), color=#3203aa, linewidth=1)
+//
+//plot(curve7, "Curve7", transp=(transplev3),color=#6d1852, linewidth=2)
+//plot(curve7a,"Curve" , transp=(transplev), color=#6d1852, linewidth=1)
+//plot(curve7b,"Curve" , transp=(transplev), color=#6d1852, linewidth=1)
+//plot(curve7c,"Curve" , transp=(transplev), color=#6d1852, linewidth=1)
+//plot(curve7d,"Curve" , transp=(transplev), color=#6d1852, linewidth=1)
+//plot(curve7e,"Curve" , transp=(transplev), color=#6d1852, linewidth=1)
+////
+//plot(curve8, "Curve8",transp=(transplev3), color=#88001b, linewidth=2)
+//plot(curve8a,"Curve" , transp=(transplev), color=#88001b, linewidth=1)
+//plot(curve8b,"Curve" , transp=(transplev), color=#88001b, linewidth=1)
+//plot(curve8c,"Curve" , transp=(transplev), color=#88001b, linewidth=1)
+//plot(curve8d,"Curve" , transp=(transplev), color=#88001b, linewidth=1)
+//plot(curve8e,"Curve" , transp=(transplev), color=#88001b, linewidth=1)
+////
+//plot(curve9, "Curve9", transp=(transplev3),color=#511313, linewidth=2)
+//plot(curve9a,"Curve" , transp=(transplev), color=#511313, linewidth=1)
+//plot(curve9b,"Curve" , transp=(transplev), color=#511313, linewidth=1)
+//plot(curve9c,"Curve" , transp=(transplev), color=#511313, linewidth=1)
+//plot(curve9d,"Curve" , transp=(transplev), color=#511313, linewidth=1)
+//plot(curve9e,"Curve" , transp=(transplev), color=#511313, linewidth=1) 
+////
+//plot(curve10,  transp=(transplev), color=#960000, linewidth=2)
+//plot(curve10a, transp=(transplev), color=#960000, linewidth=1)
+//plot(curve10b, transp=(transplev), color=#960000, linewidth=1)
+//plot(curve10c, transp=(transplev), color=#960000, linewidth=1)
+//plot(curve10d, transp=(transplev), color=#960000, linewidth=1)
+//plot(curve10e, transp=(transplev), color=#960000, linewidth=1)
+    
+//plot(avgall, color=white, linewidth=2, transp=60)
+//plot(avava, color=white, transp=60)
+
+av1=cci((curve1+curve1a+curve1b+curve1c+curve1d+curve1e)/6,64)
+av2=cci((curve2+curve2a+curve2b+curve2c+curve2d+curve2e)/6,64)
+av3=cci((curve3+curve3a+curve3b+curve3c+curve3d+curve3e)/6,64)
+av4=cci((curve4+curve4a+curve4b+curve4c+curve4d+curve4e)/6,64)
+av5=cci((curve5+curve5a+curve5b+curve5c+curve5d+curve5e)/6,64)
+av6=cci((curve6+curve6a+curve6b+curve6c+curve6d+curve6e)/6,64)
+av7=cci((curve7+curve7a+curve7b+curve7c+curve7d+curve7e)/6,64)
+av8=cci((curve8+curve8a+curve8b+curve8c+curve8d+curve8e)/6,64)
+av9=cci((curve9+curve9a+curve9b+curve9c+curve9d+curve9e)/6,64)
+rsiclose=rsi(ema(close,32),64)
+
+av= (curve1+curve2+curve3+curve4+curve5+curve6+curve8+curve7+curve9 )/9
+ava=(curve1a+curve2a+curve3a+curve4a+curve5a+curve6a+curve7a+curve8a+curve9a)/9
+avb=(curve1b+curve2b+curve3b+curve4b+curve5b+curve6b+curve7b+curve8b+curve9b)/9
+avc=(curve1c+curve2c+curve3c+curve4c+curve5c+curve6c+curve7c+curve8c+curve9c)/9
+avd=(curve1d+curve2d+curve3d+curve4d+curve5d+curve6d+curve7d+curve8d+curve9d)/9
+ave=(curve1e+curve2e+curve3e+curve4e+curve5e+curve6e+curve7e+curve8e+curve9e)/9
+
+
+mav1= sma(rsi(wma(rsi(mom(ema(av1,16),64),32),24),128),16)
+mav2= sma(rsi(wma(rsi(mom(ema(av2,16),64),32),24),128),16)
+mav3= sma(rsi(wma(rsi(mom(ema(av3,16),64),32),24),128),16)
+mav4= sma(rsi(wma(rsi(mom(ema(av4,16),64),32),24),128),16)
+mav5= sma(rsi(wma(rsi(mom(ema(av5,16),64),32),24),128),16)
+mav6= sma(rsi(wma(rsi(mom(ema(av6,16),64),32),24),128),16)
+mav7= sma(rsi(wma(rsi(mom(ema(av7,16),64),32),24),128),16)
+mav8= sma(rsi(wma(rsi(mom(ema(av8,16),64),32),24),128),16)
+mav9= sma(rsi(wma(rsi(mom(ema(av9,16),64),32),24),128),16)
+//mavrsi  =mom(wma(rsiclose,32),24)
+//mamom   = mom(wma(out,32),24)
+mavrsi  = sma(rsi(wma(rsi(mom(ema(rsiclose,16),64),32),24),128),16)
+mamom   = sma(rsi(wma(rsi(mom(ema(sq1,16),64),32),24),128),16)
+
+remav1   = plot(mom(sma(mav9,A1Length                               ),16),color=color.yellow)
+remav1a  = plot(mom(sma(mav9,A1Length + (A2Length - A1Length) / 5   ),16),color=color.yellow)
+remav1b  = plot(mom(sma(mav9,A1Length + (A2Length - A1Length) / 5*2 ),16),color=color.yellow)
+remav1c  = plot(mom(sma(mav9,A1Length + (A2Length - A1Length) / 5*3 ),16),color=color.yellow)
+remav1d  = plot(mom(sma(mav9,A1Length + (A2Length - A1Length) / 5*4 ),16),color=color.yellow)
+remav1e  = plot(mom(sma(mav9,A1Length + (A2Length - A1Length) / 5*5 ),16),color=color.yellow)
+remav2   = plot(mom(sma(mav8,A2Length                               ),24),color=color.orange)
+remav2a  = plot(mom(sma(mav8,A2Length + (A3Length - A2Length) / 5   ),24),color=color.orange)
+remav2b  = plot(mom(sma(mav8,A2Length + (A3Length - A2Length) / 5*2 ),24),color=color.orange)
+remav2c  = plot(mom(sma(mav8,A2Length + (A3Length - A2Length) / 5*3 ),24),color=color.orange)
+remav2d  = plot(mom(sma(mav8,A2Length + (A3Length - A2Length) / 5*4 ),24),color=color.orange)
+remav2e  = plot(mom(sma(mav8,A2Length + (A3Length - A2Length) / 5*5 ),24),color=color.orange)
+remav3   = plot(mom(sma(mav7,A3Length                               ),32),color=color.red)
+remav3a  = plot(mom(sma(mav7,A3Length + (A4Length - A3Length) / 5   ),32),color=color.red)
+remav3b  = plot(mom(sma(mav7,A3Length + (A4Length - A3Length) / 5*2 ),32),color=color.red)
+remav3c  = plot(mom(sma(mav7,A3Length + (A4Length - A3Length) / 5*3 ),32),color=color.red)
+remav3d  = plot(mom(sma(mav7,A3Length + (A4Length - A3Length) / 5*4 ),32),color=color.red)
+remav3e  = plot(mom(sma(mav7,A3Length + (A4Length - A3Length) / 5*5 ),32),color=color.red)
+remav4   = plot(mom(sma(mav6,A4Length                               ),40),color=color.maroon)
+remav4a  = plot(mom(sma(mav6,A4Length + (A5Length - A4Length) / 5   ),40),color=color.maroon)
+remav4b  = plot(mom(sma(mav6,A4Length + (A5Length - A4Length) / 5*2 ),40),color=color.maroon)
+remav4c  = plot(mom(sma(mav6,A4Length + (A5Length - A4Length) / 5*3 ),40),color=color.maroon)
+remav4d  = plot(mom(sma(mav6,A4Length + (A5Length - A4Length) / 5*4 ),40),color=color.maroon)
+remav4e  = plot(mom(sma(mav6,A4Length + (A5Length - A4Length) / 5*5 ),40),color=color.maroon)
+remav5   = plot(mom(sma(mav5,A5Length                               ),48),color=color.purple)
+remav5a  = plot(mom(sma(mav5,A5Length + (A6Length - A5Length) / 5   ),48),color=color.purple)
+remav5b  = plot(mom(sma(mav5,A5Length + (A6Length - A5Length) / 5*2 ),48),color=color.purple)
+remav5c  = plot(mom(sma(mav5,A5Length + (A6Length - A5Length) / 5*3 ),48),color=color.purple)
+remav5d  = plot(mom(sma(mav5,A5Length + (A6Length - A5Length) / 5*4 ),48),color=color.purple)
+remav5e  = plot(mom(sma(mav5,A5Length + (A6Length - A5Length) / 5*5 ),48),color=color.purple)
+remav6   = plot(mom(sma(mav4,A6Length                               ),56),color=color.navy)
+remav6a  = plot(mom(sma(mav4,A6Length + (A7Length - A6Length) / 5   ),56),color=color.navy)
+remav6b  = plot(mom(sma(mav4,A6Length + (A7Length - A6Length) / 5*2 ),56),color=color.navy)
+remav6c  = plot(mom(sma(mav4,A6Length + (A7Length - A6Length) / 5*3 ),56),color=color.navy)
+remav6d  = plot(mom(sma(mav4,A6Length + (A7Length - A6Length) / 5*4 ),56),color=color.navy)
+remav6e  = plot(mom(sma(mav4,A6Length + (A7Length - A6Length) / 5*5 ),56),color=color.navy)
+remav7   = plot(mom(sma(mav3,A7Length                               ),64),color=color.blue)
+remav7a  = plot(mom(sma(mav3,A7Length + (A8Length - A7Length) / 5   ),64),color=color.blue)
+remav7b  = plot(mom(sma(mav3,A7Length + (A8Length - A7Length) / 5*2 ),64),color=color.blue)
+remav7c  = plot(mom(sma(mav3,A7Length + (A8Length - A7Length) / 5*3 ),64),color=color.blue)
+remav7d  = plot(mom(sma(mav3,A7Length + (A8Length - A7Length) / 5*4 ),64),color=color.blue)
+remav7e  = plot(mom(sma(mav3,A7Length + (A8Length - A7Length) / 5*5 ),64),color=color.blue)
+remav8   = plot(mom(sma(mav2,A8Length                               ),72),color=color.teal)
+remav8a  = plot(mom(sma(mav2,A8Length + (A9Length - A8Length) / 5   ),72),color=color.teal)
+remav8b  = plot(mom(sma(mav2,A8Length + (A9Length - A8Length) / 5*2 ),72),color=color.teal)
+remav8c  = plot(mom(sma(mav2,A8Length + (A9Length - A8Length) / 5*3 ),72),color=color.teal)
+remav8d  = plot(mom(sma(mav2,A8Length + (A9Length - A8Length) / 5*4 ),72),color=color.teal)
+remav8e  = plot(mom(sma(mav2,A8Length + (A9Length - A8Length) / 5*5 ),72),color=color.teal)
+remav9   = plot(mom(sma(mav1,A9Length                               ),80),color=color.aqua)
+remav9a  = plot(mom(sma(mav1,A9Length + (A10Length - A9Length) / 5  ),80),color=color.aqua)
+remav9b  = plot(mom(sma(mav1,A9Length + (A10Length - A9Length) / 5*2),80),color=color.aqua)
+remav9c  = plot(mom(sma(mav1,A9Length + (A10Length - A9Length) / 5*3),80),color=color.aqua)
+remav9d  = plot(mom(sma(mav1,A9Length + (A10Length - A9Length) / 5*4),80),color=color.aqua)
+remav9e  = plot(mom(sma(mav1,A9Length + (A10Length - A9Length) / 5*5),80),color=color.aqua)
+//remav9f  = plot(rsi(mav9,A9Length + (A10Length - A9Length) / 5*6),color=color.aqua)
+
+
+
+//rsiplot = plot(mavrsi,color=color.fuchsia,linewidth=2,style=plot.style_circles,transp=50)
+//plotav1 = plot(remav1  ,color=color.yellow,linewidth=1)
+//plotav2 = plot(remav2  ,color=color.orange)
+//plotav3 = plot(remav3  ,color=color.red,linewidth=1)
+//plotav4 = plot(remav4  ,color=color.maroon,linewidth=2)
+//plotav5 = plot(remav5  ,color=color.purple,linewidth=2)
+//plotav6 = plot(remav6  ,color=#4106c2)
+//plotav7 = plot(remav7  ,color=color.blue,linewidth=1)
+//plotav8 = plot(remav8  ,color=color.teal,linewidth=1)
+//plotav9 = plot(remav9  ,color=color.aqua,linewidth=2)
+//fill(plotav1,plotav2 ,color=color.yellow)
+//fill(plotav2,plotav3 ,color=color.orange)
+//fill(plotav3,plotav4 ,color=color.red)
+//fill(plotav4,plotav5 ,color=color.maroon)
+//fill(plotav5,plotav6 ,color=color.purple)
+//fill(plotav6,plotav7 ,color=#4106c2)
+//fill(plotav7,plotav8 ,color=color.blue)
+//fill(plotav8,plotav9 ,color=color.aqua)
+//h1 = hline(0         ,color=color.white ,linewidth=2,   linestyle=hline.style_solid )
+//h2 = hline(40        ,color=color.lime  ,linewidth=1,   linestyle=hline.style_dashed  )
+//h3 = hline(-40       ,color=color.maroon,linewidth=1,   linestyle=hline.style_dashed)
+//h4 = hline(25        ,color=color.green ,linewidth=1,   linestyle=hline.style_dotted )
+//h5 = hline(-25       ,color=color.red   ,linewidth=1,   linestyle=hline.style_dotted   )
+//h6 = hline(62.5        ,color=color.green ,linewidth=1,   linestyle=hline.style_dotted )
+//h7 = hline(-62.5       ,color=color.red   ,linewidth=1,   linestyle=hline.style_dotted   )
+//plot(mamom,color=#ffdee0,style=plot.style_circles)
+//plot(av ,transp=80,color=white)
+//plot(ava,transp=80,color=white)
+//plot(avb,transp=80,color=white)
+//plot(avc,transp=80,color=white)
+//plot(avd,transp=80,color=white)
+//plot(ave,transp=80,color=white)
+//curve1+
+//curve1a+
+//curve1b+
+//curve1c+
+//curve1d+
+//curve1e+
+//curve2+
+//curve2a+
+//curve2b+
+//curve2c+
+//curve2d+
+//curve2e+
+//curve3+
+//curve3a+
+//curve3b+
+//curve3c+
+//curve3d+
+//curve3e+
+//curve4+
+//curve4a+
+//curve4b+
+//curve4c+
+//curve4d+
+//curve4e+
+//curve5+
+//curve5a+
+//curve5b+
+//curve5c+
+//curve5d+
+//curve5e+
+//curve6+
+//curve6a+
+//curve6b+
+//curve6c+
+//curve6d+
+//curve6e+
+//curve7+
+//curve7a+
+//curve7b+
+//curve7c+
+//curve7d+
+//curve7e+
+//curve8+
+//curve8a+
+//curve8b+
+//curve8c+
+//curve8d+
+//curve8e+
+//curve9+
+//curve9a+
+//curve9b+
+//curve9c+
+//curve9d+
+//curve9e+
+

@@ -1,0 +1,166 @@
+//@version=5
+//Not my original idea, Ive pretty much just doubled the code to have 2 Candles.All Credit goes to the creator of "Multi-Time Period Charts" as I have it saved.I cant find it anymore searching and the owner doesnt appear so if its you let me know (and ill credit you).  
+indicator("2TimeFrame Candles ", overlay=false, max_boxes_count=500)
+
+AUTO_TIMEFRAME_TOOLTIP = "When the Auto option is selected, the timeframe of the indicator is chosen automatically based on the chart timeframe. The Timeframe dropdown is ignored. The automated timeframes are: \n
+
+ '1 day' for any chart timeframes below '1 day' \n
+
+ '1 week' for any timeframes starting from '1 day' up to '1 week' \n
+
+ '1 month' for any timeframes starting from '1 week' up to '1 month' \n
+
+ '3 months' for any timeframes starting from '1 month' up to '3 months' \n
+
+ '12 months' for any timeframes above '3 months'"
+
+HLR = "High/Low Range"
+TR = "True Range"
+HAR = "Heikin Ashi Range"
+
+DEFAULT_RESOLUTION1 = "240"
+DEFAULT_COLOR_GROWTH1 = color.lime
+DEFAULT_COLOR_FALL1 = color.red
+DEFAULT_CALCULATION_METHOD1 = HLR
+DEFAULT_AUTO_RESOLUTION1 = true
+
+DEFAULT_RESOLUTION2 = "1D"
+DEFAULT_COLOR_GROWTH2 = color.blue
+DEFAULT_COLOR_FALL2 = color.purple
+DEFAULT_CALCULATION_METHOD2 = HLR
+DEFAULT_AUTO_RESOLUTION2 = false
+
+var prevBarIndex1 = bar_index
+var prevBarIndex2 = bar_index
+
+drawBox1(left1, right1, top1, bottom1, diff1, growthColorInput1, fallColorInput1, borderGrowth1, borderFall1) =>
+    drawnBox1 = box.new(left1, top1, right1, bottom1)
+    if diff1 < 0
+        box.set_border_color(drawnBox1, borderFall1)
+        box.set_bgcolor(drawnBox1, fallColorInput1)
+    else
+        box.set_border_color(drawnBox1, borderGrowth1)
+        box.set_bgcolor(drawnBox1, growthColorInput1)
+    drawnBox1
+
+drawBox2(left2, right2, top2, bottom2, diff2, growthColorInput2, fallColorInput2, borderGrowth2, borderFall2) =>
+    drawnBox2 = box.new(left2, top2, right2, bottom2)
+    if diff2 < 0
+        box.set_border_color(drawnBox2, borderFall2)
+        box.set_bgcolor(drawnBox2, fallColorInput2)
+    else
+        box.set_border_color(drawnBox2, borderGrowth2)
+        box.set_bgcolor(drawnBox2, growthColorInput2)
+    drawnBox2
+
+selectAutoTimeframe() =>
+     timeframe.isseconds ? '120':
+     timeframe.isminutes ? '1440':
+     timeframe.isdaily ? '3D':
+     timeframe.isweekly ? '720':
+     timeframe.ismonthly and timeframe.multiplier < 3 ? '3M': '12M'
+
+autoTimeframeInput = input(DEFAULT_AUTO_RESOLUTION1, title="AutoTimeframe", tooltip=AUTO_TIMEFRAME_TOOLTIP)
+timeframeInput1 = input.timeframe(DEFAULT_RESOLUTION1, title="Resolution 1")
+timeframeInput2 = input.timeframe(DEFAULT_RESOLUTION2, title="Resolution 2")
+timeframe1 = autoTimeframeInput ? selectAutoTimeframe() : timeframeInput1
+timeframe2 = autoTimeframeInput ? selectAutoTimeframe() : timeframeInput2
+
+calculationMethodInput1 = input.string(DEFAULT_CALCULATION_METHOD1, "Calculation", options = [HLR, TR, HAR])
+calculationMethodInput2 = input.string(DEFAULT_CALCULATION_METHOD2, "Calculation", options = [HLR, TR, HAR])
+
+growthColorInput1 = input(DEFAULT_COLOR_GROWTH1, title="",inline="Body")
+fallColorInput1 = input(DEFAULT_COLOR_FALL1, title="Body", inline="Body")
+
+growthColorInput2 = input(DEFAULT_COLOR_GROWTH2, title="",inline="Body")
+fallColorInput2 = input(DEFAULT_COLOR_FALL2, title="Body", inline="Body")
+
+growthBorderColor1 = color.new(growthColorInput1, 50)
+fallBorderColor1 = color.new(fallColorInput1, 50)
+
+growthBorderColor2 = color.new(growthColorInput2, 50)
+fallBorderColor2 = color.new(fallColorInput2, 50)
+
+[previousHigh1, previousLow1, previousClose1, previousOpen1, prePreviousClose1] = request.security(syminfo.tickerid, timeframe1, [high[1], low[1], close[1], open[1], close[2]], lookahead=barmerge.lookahead_on)
+[currentHigh1, currentLow1, currentClose1, currentOpen1, prevClose1] = request.security(syminfo.tickerid, timeframe1, [high, low, close, open, close[1]])
+
+[previousHigh2, previousLow2, previousClose2, previousOpen2, prePreviousClose2] = request.security(syminfo.tickerid, timeframe2, [high[1], low[1], close[1], open[1], close[2]], lookahead=barmerge.lookahead_on)
+[currentHigh2, currentLow2, currentClose2, currentOpen2, prevClose2] = request.security(syminfo.tickerid, timeframe2, [high, low, close, open, close[1]])
+
+isNewPeriod1 = ta.change(time(timeframe1))
+isNewPeriod2 = ta.change(time(timeframe2))
+
+drawCurrent1 = barstate.islast and not isNewPeriod1
+secHigh1 = drawCurrent1 ? currentHigh1 : previousHigh1
+secPrevClose1 = drawCurrent1 ? prevClose1 : prePreviousClose1
+secLow1 = drawCurrent1 ? currentLow1 : previousLow1
+
+drawCurrent2 = barstate.islast and not isNewPeriod2
+secHigh2 = drawCurrent2 ? currentHigh2 : previousHigh2
+secPrevClose2 = drawCurrent2 ? prevClose2 : prePreviousClose2
+secLow2 = drawCurrent2 ? currentLow2 : previousLow2
+
+
+diff1 = drawCurrent1 ? currentClose1 - currentOpen1 : previousClose1 - previousOpen1
+left1 = prevBarIndex1
+right1 = drawCurrent1 ? bar_index : bar_index[1]
+
+diff2 = drawCurrent2 ? currentClose2 - currentOpen2 : previousClose2 - previousOpen2
+left2 = prevBarIndex2
+right2 = drawCurrent2 ? bar_index : bar_index[1]
+
+
+[ashiHigh1, ashiLow1] = request.security(ticker.heikinashi(syminfo.tickerid), timeframe1, [high, low])
+float top1 = na
+float bottom1 = na
+
+[ashiHigh2, ashiLow2] = request.security(ticker.heikinashi(syminfo.tickerid), timeframe2, [high, low])
+float top2 = na
+float bottom2 = na
+
+if calculationMethodInput1 == HLR
+    top1 := secHigh1
+    bottom1 := secLow1
+else if calculationMethodInput1 == TR
+    top1 := math.max(secHigh1, secPrevClose1)
+    bottom1 := math.min(secLow1, secPrevClose1)
+else if calculationMethodInput1 == HAR
+    top1 := ashiHigh1
+    bottom1 := ashiLow1
+    
+if calculationMethodInput2 == HLR
+    top2 := secHigh2
+    bottom2 := secLow2
+else if calculationMethodInput2 == TR
+    top2 := math.max(secHigh2, secPrevClose2)
+    bottom2 := math.min(secLow2, secPrevClose2)
+else if calculationMethodInput2 == HAR
+    top2 := ashiHigh2
+    bottom2 := ashiLow2
+
+if isNewPeriod1
+    prevBarIndex1 := bar_index
+    drawBox1(left1, right1, top1, bottom1, diff1, growthColorInput1, fallColorInput1, growthBorderColor1, fallBorderColor1)
+    
+if isNewPeriod2
+    prevBarIndex2 := bar_index
+    drawBox2(left2, right2, top2, bottom2, diff2, growthColorInput2, fallColorInput2, growthBorderColor2, fallBorderColor2)
+
+var box prevBox1 = na
+var box prevBox2 = na
+
+if barstate.islast
+    if isNewPeriod1
+        prevBox1 := na
+    else
+        box.delete(prevBox1)
+        prevBox1 := drawBox1(left1, right1, top1, bottom1, diff1, growthColorInput1, fallColorInput1, growthBorderColor1, fallBorderColor1)
+        
+        
+if barstate.islast
+    if isNewPeriod2
+        prevBox2 := na
+    else
+        box.delete(prevBox2)
+        prevBox2 := drawBox2(left2, right2, top2, bottom2, diff2, growthColorInput2, fallColorInput2, growthBorderColor2, fallBorderColor2)
+
