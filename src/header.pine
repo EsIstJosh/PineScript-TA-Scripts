@@ -1,0 +1,31 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EsIstTurnt
+
+//@version=5
+indicator("MyHeader")
+tr1=input.int(defval=33,minval=0,maxval=100,title='Transparency Level 1(Solidish)')
+tr2=input.int(defval=66,minval=0,maxval=100,title='Transparency Level 2(Opaque)')
+tr3=input.int(defval=88,minval=0,maxval=100,title='Transparency Level 3(Glass)')
+tf=input.timeframe(defval='1D')
+//green
+green1=color.new(#40e207,tr1)		
+green2=color.new(#39c90d,tr1)	
+green3=color.new(#b1f90e,tr1)		
+//yellow
+yellow1=color.new(#e3f036,tr1)		
+yellow2=color.new(#fbdc09,tr1)	
+yellow3=color.new(#f09e0b,tr1)		
+//red
+red1=color.new(#ff4218,tr1)	
+red2=color.new(#ff1100,tr1)	
+red3=color.new(#f70073,tr1)	
+//purple
+purple1=color.new(#ed20ab,tr1)		
+purple2=color.new(#a139ff,tr1)		
+purple3=color.new(#6545e1,tr1)		
+//blue
+blue1=color.new(#3244f0,tr1)	
+blue2=color.new(#0085ff,tr1)		
+blue3=color.new(#10c5f7,tr1)	
+
+current=request.security(syminfo.ticker,tf,close)

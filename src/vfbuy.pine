@@ -1,0 +1,246 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © UberTradingSystems
+//
+// Name:    VFI - Volume Flow Indicator [UTS]
+// Created: 2020/01/07
+// Desc:    
+// The Volume Flow Indicator (VFI) indicator was first introduced in my June 2004 and is is based on the popular On Balance Volume (OBV) but with three very important modifications:
+// [list]
+// [*] Unlike the OBV, indicator values are no longer meaningless. Positive readings are bullish  and negative bearish.
+// [*] The calculation is based on the day's median instead of the closing price.
+// [*] A volatility threshold takes into account minimal price changes and another threshold eliminates excessive  volume.
+// [*] The indicator takes into account only the latest 6 month volume action and not the entire data loaded in the chart.
+// [/list]
+//
+// [b]General Usage[/b]
+// A simplified interpretation of the VFI is that values above zero indicate a bullish state and the crossing of the zero line is the trigger or buy signal.
+// The strongest signal with all money flow indicators is of course divergence.
+// The classic form of divergence is when the indicator refuses to follow the price action and makes lower highs while price makes higher highs (negative divergence). If price reaches a new low but the indicator fails to do so, then price probably traveled lower than it should have. In this instance, you have positive divergence.
+//
+// [b]Default settings[/b]
+// [list]
+// [*] 130 VFI Length
+// [*] 0.2 Coef
+// [*] 2.5 Volume cutoff
+// [*] 3   Smoothing Period    
+// [/list]
+// Further setting examples can be found on [url=http://www.precisiontradingsystems.com/VOLUME_FLOW.htm]http://www.precisiontradingsystems.com/VOLUME_FLOW.htm[/url]
+// E.g. 40 or 18 Length to achieve different results like in the examples.
+//
+// [b]Trend Visualisation[/b]
+// Optional: If the trend direction is [i]DOWN[/i] the moving average is painted red. If the trend direction is [i]UP[/i] the moving average is painted in green.
+// If the movement is [i]FLAT[/i] then the color is grey.
+//
+// [b]Moving Averages[/b]
+// 4 different types of Moving Averages are available for both FVI and the optional Moving Average of the FVI.
+// [list]
+// [*] ALMA (Arnaud Legoux Moving Average)
+// [*] EMA  (Exponential Moving Average)
+// [*] SMA  (Simple Moving Average)
+// [*] WMA  (Weighted Moving Average)
+// [/list]
+//
+// [b]Notes[/b]
+// This indicator is using the exact formula from [url=http://mkatsanos.com/VFI.html]http://mkatsanos.com/VFI.html[/url] where EMA has been taken as default value for FVI smoothing calculation.
+
+
+//@version=4
+study(title="VFI-MultiWave", shorttitle="VFBUY", format=format.volume)
+
+
+// Const
+kMaColor = #00ffff
+kNeutralColor = color.white
+kBearColor = #9500ff
+kBullColor = #48ff00
+
+kAlma = "ALMA"
+kEma = "EMA"
+kSma = "SMA"
+kWma = "WMA"
+
+
+// Input
+
+vfi_length = input(64, title="Length", minval=1)
+vfi_coef = input(0.2, title="Coef", minval=0.1)
+vfi_volCutoff = input(2.5, title="Volume Cutoff", minval=0.1)
+vfi_smoothLen = input(3, title="Smoothing Period", minval=1)
+vfi_smoothType = input(kEma, title="Smoothing Type", options=[kAlma, kEma, kSma, kWma])
+vfi_showTrend = input(false, title="Visualize Trend")
+vfi_showFill = input(true, title="Apply Filling")
+vfi_showMa = input(true, title="Show Moving Average")
+vfi_maType = input(kEma, title="Moving Average Type", options=[kAlma, kEma, kSma, kWma])
+vfi_maLength = input(5, title="Moving Average Length", minval=1)
+vfi_almaOffset = input(0.85, title="• ALMA - Offset (global setting)", minval=0.0, maxval=1.0, step=0.05) // more smoothness (closer to 1) vs. more responsiveness (closer to 0)
+vfi_almaSigma = input(6.0, title="• ALMA - Sigma (global setting)", minval=0.0, step=0.05) // the larger sigma the smoother ALMA
+
+
+// Functionality
+
+isRising(sig) =>
+    sig > sig[1]
+    
+isFlat(sig) =>
+    sig == sig[1]
+
+vfi_trendColor(sig) =>
+    iff(isFlat(sig), kNeutralColor, iff(isRising(sig), kBullColor, kBearColor))
+    
+vfi_color(sig) =>
+    iff(isFlat(sig), kNeutralColor, iff(sig > 0, kBullColor, kBearColor))
+    
+osc_color(sig) =>
+    iff(sig == 0, kNeutralColor, iff(sig > 0, kBullColor, kBearColor))
+
+smooth(t, sig, len) =>
+    ma = float(sig)         // None
+    if t == kSma            // Simple
+        ma := sma(sig, len)
+    if t == kEma            // Exponential
+        ma := ema(sig, len)
+    if t == kWma            // Weighted
+        ma := wma(sig, len)
+    if t == kAlma           // Arnaud Legoux
+        ma := alma(sig, len, vfi_almaOffset, vfi_almaSigma)
+    ma
+
+calc_vfi(fviPeriod, smoothType, smoothLen, coef, vCoef) =>
+    avg = nz(hlc3)
+    inter = log(avg) - log(avg[1])
+    vInter = stdev(inter, 30)
+    cutOff = coef * vInter * close
+    vAve = smooth(kSma, volume[1], fviPeriod)
+    vMax = vAve * vCoef
+    vC = min(volume, vMax)
+    mf = avg - avg[1]
+    vCp = iff(mf > cutOff, vC, iff(mf < -cutOff, -vC, 0))
+    sVfi = sum(vCp, fviPeriod) / vAve
+    vfi = smooth(smoothType, sVfi, smoothLen)
+    
+value_vfi = calc_vfi(vfi_length, vfi_smoothType, vfi_smoothLen, vfi_coef, vfi_volCutoff)
+value_ma = smooth(vfi_maType, value_vfi, vfi_maLength)
+
+color_vfi = vfi_showTrend ? vfi_trendColor(value_vfi) : vfi_color(value_vfi)
+color_osc = vfi_showFill ? osc_color(value_vfi) : na
+color_ma = vfi_showMa ? kMaColor : na
+
+
+// Drawings
+
+plot_vfi = plot(value_vfi+50, title="VFI", color=color_vfi, linewidth=1)
+plot_fill = plot(value_vfi*-1+50, color=color_vfi, editable=false)
+fill(plot_vfi, plot_fill, title="Oscillator Fill", color=color_osc, transp=88) 
+hline(35, color=color.gray, title="Zero Line", linewidth=1, linestyle=hline.style_dotted)
+plot(value_ma+50, title="MA", color=color_ma, linewidth=2)
+
+
+
+src1 = close
+src2 = open
+domcycle = input(20, minval=10, title="Dominant Cycle Length")
+crsi = 0.0
+cyclelen = domcycle / 2
+vibration = 10
+leveling = 10.0
+cyclicmemory = domcycle * 2
+//set min/max ranges?
+
+h1 = hline(30, color=color.silver, linestyle=hline.style_dashed)
+h2 = hline(70, color=color.silver, linestyle=hline.style_dashed)
+
+torque = 2.0 / (vibration + 1)
+phasingLag = (vibration - 1) / 2.0
+
+up = rma(max(change(src1), 0), cyclelen)
+down = rma(-min(change(src1), 0), cyclelen)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - 100 / (1 + up / down)
+crsi := torque * (2 * rsi - rsi[phasingLag]) + (1 - torque) * nz(crsi[1])
+
+lmax = -999999.0
+lmin = 999999.0
+for i = 0 to cyclicmemory - 1 by 1
+    if nz(crsi[i], -999999.0) > lmax
+        lmax := nz(crsi[i])
+        lmax
+    else
+        if nz(crsi[i], 999999.0) < lmin
+            lmin := nz(crsi[i])
+            lmin
+
+mstep = (lmax - lmin) / 100
+aperc = leveling / 100
+
+db = 0.0
+for steps = 0 to 100 by 1
+    testvalue = lmin + mstep * steps
+    above = 0
+    below = 0
+    for m = 0 to cyclicmemory - 1 by 1
+        below := below + iff(crsi[m] < testvalue, 1, 0)
+        below
+
+    ratio = below / cyclicmemory
+    if ratio >= aperc
+        db := testvalue
+        break
+    else
+        continue
+
+ub = 0.0
+for steps = 0 to 100 by 1
+    testvalue = lmax - mstep * steps
+    above = 0
+    for m = 0 to cyclicmemory - 1 by 1
+        above := above + iff(crsi[m] >= testvalue, 1, 0)
+        above
+
+    ratio = above / cyclicmemory
+    if ratio >= aperc
+        ub := testvalue
+        break
+    else
+        continue
+mfi = mfi(crsi/4, 16)
+cci = cci(crsi/2, 32)
+wmacrsi = wma(crsi, 128)
+emacrsi = ema(crsi, 32)
+lowband = plot(db, "LowBand", color=color.white, linewidth=1, style=plot.style_cross)
+highband = plot(ub, "HighBand", color=color.white, linewidth=1, style=plot.style_cross)
+fill(h1, h2, color=color.silver, transp=90)
+fill(lowband, highband, color=#C2CED1, transp=90)
+plot(crsi, "CRSI", color=color.white, linewidth=3, style=plot.style_linebr)
+plot(crsi, "CRSI", color=#000000, linewidth=2, style=plot.style_circles)
+//plot(emacrsi, "Moving Average", color.yellow, style=plot.style_circles)
+//plot(wmacrsi, "Moving Average", color.orange, linewidth=1, style=plot.style_circles)
+//plot(cci/6+50, "CCI", color.teal, linewidth=1)
+//plot(mfi, "MFI", color.aqua, linewidth=1)
+num1 = high*low
+
+curve1 = (alma(mfi, 9, 0.85, 6))
+curve2 = (vwma(cci/8+35,10))
+num2 = curve1*curve2*close
+
+curve3 = vwma((curve2*curve2)/crsi+(close/80),3)
+plot(curve1,"LimeCurve1", linewidth=2, color=#aeff00)
+plot(curve2,"LimeCurve2", linewidth=2, color=#51ff00)
+plot(curve1,"LimeCurve1", linewidth=2, color=#aeff00, style=plot.style_circles)
+plot(curve2,"LimeCurve2", linewidth=2, color=#51ff00, style=plot.style_circles)
+
+plot(curve3,"PinkWarningCurve", color=#ff14b5, linewidth=2, style=plot.style_linebr)
+plot(curve3,"PinkWarningCurve", color=#000000, linewidth=2, style=plot.style_circles)
+
+curve4 = curve1+curve2+curve3/(wmacrsi*crsi*emacrsi)
+plot(curve4/2,"GreenCenterCurve", linewidth=3, color=#14f7ff, style=plot.style_linebr)
+plot(curve4/2,"TealCenterCurve", linewidth=2, color=#000000, style=plot.style_circles)
+
+curve5 = mom((curve1+curve2+curve4*rsi)/(curve3*4),16)
+//plot(curve5/1.33+60, color=#ff00c3, style=plot.style_linebr)
+//plot(curve5/1.33+60, color=#000000, linewidth=2, style=plot.style_cross)
+curve6 = mfi((curve1+curve2+curve4*rsi)/(curve3*6),16)
+//plot(curve6/1.66*(curve5/crsi)+33, color=#0055ff, style=plot.style_linebr)
+//plot(curve6/1.66*(curve5/crsi)+33, color=#000000, linewidth=2, style=plot.style_cross)
+
+plot((curve3*-0.33)+50,"PurpleWarningCurve", color=color.purple, linewidth=2, style=plot.style_linebr)
+plot((curve3*-0.33)+50,"PurpleWarningCurve", color=#000000, linewidth=2, style=plot.style_circles)
+

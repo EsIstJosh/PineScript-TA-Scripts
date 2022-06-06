@@ -1,0 +1,108 @@
+
+//@version=5
+indicator(title="Linear Regression Slope Matrix", shorttitle="LRM", overlay=true)
+
+src = close[0]
+len1 = input.int(defval=200, minval=1, title="Linear Regression Length")
+lrc1 = ta.linreg(src, len1, 0)
+//plot(lrc1, color = red, title = "Linear Regression Curve 1", style = line, linewidth = 2)
+
+len2 = input.int(defval=128, minval=1, title="Linear Regression Length")
+lrc2 = ta.linreg(src, len2, 0)
+//plot(lrc2, color = #fc3d03, title = "Linear Regression Curve 2", style = line, linewidth = 2)
+
+len3 = input.int(defval=100, minval=1, title="Linear Regression Length")
+lrc3 = ta.linreg(src, len3, 0)
+//plot(lrc3, color = #fcad03, title = "Linear Regression Curve 3", style = line, linewidth = 2)
+
+len4 = input.int(defval=50, minval=1, title="Linear Regression Length")
+lrc4 = ta.linreg(src, len4, 0)
+//plot(lrc4, color = #d7fc03, title = "Linear Regression Curve 4", style = line, linewidth = 2)
+
+len5 = input.int(defval=32, minval=1, title="Linear Regression Length")
+lrc5 = ta.linreg(src, len5, 0)
+//plot(lrc5, color = #30fc03, title = "Linear Regression Curve 5", style = line, linewidth = 2)
+
+avg = (lrc1+lrc2+lrc3+lrc4+lrc5)/5
+avg2 = ta.ema(avg,5)
+avg3 = ta.vwma((avg2*avg)/(lrc5),8)
+avg4 = (lrc5-lrc4+lrc3-lrc2+lrc1)
+avg5 = (avg4/avg)*avg3
+avg6 = (avg5/avg5)*avg3
+avg7 = (avg6/avg4)*avg2
+avg8 = (avg7/avg6)*avg
+avg9 = (avg+avg2+avg3+avg4+avg5+avg6+avg7+avg8)/8
+avg10 = (avg+avg2-avg3+avg4-avg5+avg6-avg7+avg8)/2
+avg11 = (avg/avg2*avg3/avg4*avg5/avg6*avg7/avg8)*(close)
+avg12 = (avg*avg2*avg3/avg4/avg5*avg6*avg7/avg8/avg9)*(high/low)
+avg13 = (avg*avg2*avg3*avg4*avg5/avg6/avg7/avg8/avg9/avg10)*(hl2)+((high-low)*2)
+avg15 = (avg/avg2/avg3*avg4*avg5/avg6/avg7*avg8)*(hl2)
+
+
+emav1 = ta.ema(avg12,64)
+emav2 = ta.ema(avg13,32)
+emav3 = ta.ema((avg13/avg11)*avg,16)
+emav4 = ta.ema((avg12/avg10)*avg,8)
+emav5 = ta.vwma(avg9,64)
+emav6 = ta.vwma(avg10,64)
+emav7 = ta.vwma(avg11,64)
+avg14 = (((avg+avg2-avg3+avg4-avg5+avg6-avg7+avg8)/2)/((emav1-emav2+emav3+emav4-emav5-emav6+emav7)/7)*(avg/6.66))
+mav = ta.wma(avg14,32)
+mav2 = ta.alma(mav, 128, 0.85, 6)
+sig1 = ta.ema(ta.sma((emav4+avg9)/2,16),16)
+sig2 = ta.ema(ta.sma((emav4+emav5+emav6+emav7)/4,16),16)
+cust = (avg11+avg15)/2
+cust2 = (emav4+avg15)/2
+cust3 = (mav+avg15)/2
+cust4 = (emav4+avg11)/2
+                         color=white,  linewidth=2)
+plot(cust  +(ta.sma(hl2,4)/2),                             color=color.gray,   linewidth=2)
+plot(cust2 +(ta.sma(hl2,4)/2),                             color=color.white,   linewidth=2)
+plot(cust3 +(ta.sma(hl2,4)/2),                             color=color.red,   linewidth=2)
+plot(cust4 +(ta.sma(hl2,4)/2),                             color=color.green,   linewidth=2)
+plot(avg15 +(ta.sma(hl2,4)/2),                             color=color.red,    linewidth=3, style=plot.style_linebr)
+plot(mav   +(ta.sma(hl2,4)/2),                             color=#e31409,linewidth=1)
+//plot(mav22+ta.(sma(hl2,4)/2),                            color=color.white,  linewidth=2)
+plot(avg11 +(ta.sma(hl2,4)/2),                             color=#1aff00,linewidth=1, style=plot.style_linebr)
+plot(emav4 +(ta.sma(hl2,4)/2),                             color=color.lime,  linewidth=3, style=plot.style_linebr)
+//plot(emav4, color=#05a31a, linewidth=1, style=histogram, histbase=1900)
+//plot(avg11, color=#1aff00, linewidth=2, style=histogram, histbase=1900)
+//plot(avg15, color=red, linewidth=1, style=histogram, histbase=1900)
+//plot(avg12, color=maroon)
+//plot(avg13, color=aqua)
+//plot(avg14, linewidth=3, color=red, style=histogram, histbase=1900)
+//plot(emav5, color=#c5d1cc, linewidth=2)
+//plot(emav6, color=#8ff2ec, linewidth=1, style=histogram, histbase=1900)
+//plot(low,color=orange, linewidth=2)
+//plot(high,color=blue, linewidth=2)
+//plot(emav1, color=#fa50d2, linewidth=2)
+//plot(emav2, color=#ff00f2, linewidth=2)
+//plot(emav2*-1+(emav1+avg-(emav1-emav2))-(emav2/emav2),color=#25d98b)
+//plot(emav3, color=#780172, linewidth=2)
+//plot((mav*-1)+(mav+mav2) -(high-low), color=#e31409,linewidth=2, style=linebr)
+//plot((mav2*-1)+(mav+mav2)-(high-low), color=lime,   linewidth=2, style=linebr)
+//plot(emav7, color=#ff0000, linewidth=3)
+//plot(sig1, color=#ff4c24, linewidth=1)
+//plot(sig2, color=#ff3c00, linewidth=2)
+//plot(avg14,                           color=maroon, linewidth=2, style=linebr, histbase=290)
+
+//lrprev1 = ta.linreg(close[1], len1, 0)
+//slope1 = ((lrc1 - lrprev1) / interval )  
+//
+//lrprev2 = ta.linreg(close[1], len2, 0)
+//slope2 = ((lrc2 - lrprev2) / interval)
+//
+//lrprev3 = ta.linreg(close[1], len3, 0)
+//slope3= ((lrc3 - lrprev3) / interval)
+//
+//lrprev4= ta.linreg(close[1], len4, 0)
+//slope4= ((lrc4 - lrprev4) / interval)
+//
+//lrprev5= ta.linreg(close[1], len5, 0)
+//slope5= ((lrc5 - lrprev5) / interval)
+
+//Please if somebody have suggestions how show this better, let me know
+//codiff = slope1
+//plotarrow(codiff, colorup=teal, colordown=orange, transp=40)
+
+//plotarrow(codiff, colorup=teal, colordown=orange, transp=40)

@@ -1,0 +1,58 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EsIstTurnt
+
+//@version=5
+indicator("Bond Warning System")
+res = input.timeframe('D', "Resolution", options=['D', 'W', 'M'])
+multi = ta.sma(close,8)
+sym1=input.symbol(title="Symbol1",defval="US10Y")
+sym1a=input.symbol(title="Symbol1a",defval="US02Y")
+sym1b=input.symbol(title="Symbol1b",defval="US05Y")
+sym2=input.symbol(title="Symbol2",defval="SPX+DJI+NDQ")
+sym3=input.symbol(title="Symbol3",defval="GOLD+SILVER+PLATINUM")
+len1=input.int(title="Length1",defval=16)
+len2=input.int(title="Length2",defval=64)
+len3=input.int(title="Length3",defval=32)
+shortsetback= input.int(title="ShortMA Setback",  defval=0 ,maxval=1024,minval=0)
+longsetback = input.int(title="LongMA Setback",   defval=32,maxval=1024,minval=4)
+shortma     = input.int(title="ShortMA Length",   defval=8 ,maxval=512,minval=1)
+longma      = input.int(title="LongMA Length",    defval=256,maxval=1024,minval=2)
+shortmama   = input.int(title="ShortMAMA Length", defval=32,maxval=1024,minval=1)
+longmama    = input.int(title="LongMAMA Length",  defval=128,maxval=1024,minval=2)
+shortsource = input.source(title="Short Source",     defval=close)
+longsource  = input.source(title="Long Source"     , defval=close)
+
+
+
+color1=color.new(#ff0000, 20)
+color2=color.new(color.white, 80)
+color3=color.new(#acfb00, 40)
+color4=color.new(#0053ff, 40)
+
+ema1 = ta.ema(ta.roc(request.security(sym1,res,close),len1)/ta.roc(request.security(sym1,res,close),len2),len1)
+//rsi1 = ta.rsi(ta.ema(request.security(sym1,res,close),len1)+ta.wma(request.security10y copy(sym1,res,close),len2),len3)/10-5
+//rocc1 = plot(ta.roc(ta.ema(request.security(sym1,res,close/multi),len1)+ta.wma(request.security(sym1,res,close/multi),len2),len3),color=color.green)
+ema2 = ta.ema(ta.roc(request.security(sym2,res,close),len1)/ta.roc(request.security(sym2,res,close),len2),len1)
+//rsi2 = ta.rsi(ta.ema(request.security(sym2,res,close),len1)+ta.wma(request.security(sym2,res,close),len2),len3)/10-5
+//rocc2 = plot(ta.roc(ta.ema(request.security(sym2,res,close/multi),len1)+ta.wma(request.security(sym2,res,close/multi),len2),len3),color=color.yellow)
+ema1a = ta.ema(ta.roc(request.security(sym1a,res,ta.sma(close,16)),len1)/ta.roc(request.security(sym1a,res,ta.sma(close,16)),len2),len1)-5
+ema1b = ta.ema(ta.roc(request.security(sym1b,res,ta.sma(close,16)),len1)/ta.roc(request.security(sym1b,res,ta.sma(close,16)),len2),len1)+5
+//ma1   = ta.sma       (request.security(sym2 ,res,ta.sma(close,64)),len1) /     (request.security(sym2,res,ta.sma (close,512)),len2)
+equitys = ta.ema(request.security(sym2, res, ta.wma(shortsource[shortsetback],shortma)),shortmama)/ta.ema(request.security(sym2,res,ta.wma(longsource[longsetback],longma)),longmama)*20-20
+metals = ta.ema(request.security(sym3, res, ta.wma(shortsource[shortsetback],shortma)),shortmama)/ta.ema(request.security(sym3,res,ta.wma(longsource[longsetback],longma)),longmama)*20-20
+plot(equitys,color=color.fuchsia, linewidth=2)
+plot(metals,color=color.gray, linewidth=2)
+plot(ema1  ,style=plot.style_histogram, histbase=0, color=ema1>1.1?   color1:color2,transp=70)
+plot(ema1  ,style=plot.style_histogram, histbase=0, color=ema1<-1.5?color1:color2,transp=70)
+plot(ema1a,style=plot.style_histogram, histbase=-5, color=ema1a>-4.25?   color3:color2,transp=70)
+plot(ema1a,style=plot.style_histogram, histbase=-5, color=ema1a<-6?color3:color2,transp=70)
+plot(ema1b,style=plot.style_histogram, histbase=5, color=ema1b>5.75?   color4:color2,transp=70)
+plot(ema1b,style=plot.style_histogram, histbase=5, color=ema1b<4.75?color4:color2,transp=70)
+
+//plot(rsi1,color=rsi1>rsi1[1]?color.lime:#ff0000)
+//roc1=//plot(roc,color=(request.security(sym2,res,close)>request.security(sym2[1],res,close)?color.lime:color.green))
+//roc1=plot(request.security(sym1,res,close),color=color.fuchsia)
+//plot(ema2,color=ema2>1?color.orange:color.black)
+//plot(rsi2,color=rsi2>rsi2[1]?color.lime:color.red)
+//plot(roc,color=(request.security(sym2,res,close)>request.security(sym2[1],res,close)?color.lime:color.green))
+//roc2=plot(request.security(sym2,res,close/3/),color=color.fuchsia)

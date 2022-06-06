@@ -1,0 +1,22 @@
+//@version=5
+indicator(title = "Coppock Band", timeframe="", timeframe_gaps=true)
+wmaLength1 = input(title="WMA Length1", defval=64)
+wmaLength2 = input(title="WMA Length2", defval=8)
+wmaLength3 = input(title="WMA Length3", defval=128)
+wmaLength4 = input(title="WMA Length4", defval=32)
+
+longRoCLength1 = input(title="Long RoC Length1", defval=14)
+shortRoCLength1 = input(title="Short RoC Length1", defval=11)
+longRoCLength2 = input(title="Long RoC Length2", defval=32)
+shortRoCLength2 = input(title="Short RoC Length2", defval=16)
+source = close
+curve1 = ta.wma(ta.roc(source, longRoCLength1) + ta.roc(source, shortRoCLength1), wmaLength1)
+curve2 = ta.wma(ta.roc(source, longRoCLength2) + ta.roc(source, shortRoCLength2), wmaLength2)
+curve3 = ta.wma(ta.roc(source, longRoCLength1) + ta.roc(source, shortRoCLength2), wmaLength2)
+curve4 = ta.wma(ta.roc(source, longRoCLength2) + ta.roc(source, shortRoCLength1), wmaLength1)
+curve5 = ta.wma(ta.roc(source, longRoCLength1) + ta.roc(source, shortRoCLength2), wmaLength3)
+curve6 = ta.wma(ta.roc(source, longRoCLength2) + ta.roc(source, shortRoCLength1), wmaLength4)
+plot(curve1)
+plot(curve2)
+plot(curve3)
+plot(curve4)
